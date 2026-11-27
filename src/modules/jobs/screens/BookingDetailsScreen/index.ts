@@ -1,0 +1,1 @@
+export {BookingDetailsScreen} from './BookingDetailsScreen';

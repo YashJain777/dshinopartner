@@ -1,0 +1,175 @@
+# ==============================================================================
+# React Native & Node.js Developer .gitignore
+# Complete & Production-ready Git Ignore Configuration
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Dependencies & Package Managers
+# ------------------------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.npm/
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.pnpm-store/
+*.tsbuildinfo
+
+# Note: package-lock.json and yarn.lock SHOULD be committed to git for reproducible builds.
+
+# ------------------------------------------------------------------------------
+# 2. Environment Variables & Secret Files
+# ------------------------------------------------------------------------------
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*
+!.env.example
+
+# Security Keys & Certificates
+*.pem
+*.key
+*.p12
+*.pfx
+*.asc
+*.jks
+*.keystore
+!debug.keystore
+
+# ------------------------------------------------------------------------------
+# 3. Android Build & Temporary Files
+# ------------------------------------------------------------------------------
+android/**/build/
+android/.gradle/
+**/.cxx/
+android/local.properties
+android/app/src/main/assets/index.android.bundle
+*.apk
+*.aab
+*.dex
+.kotlin/
+*.hprof
+
+# ------------------------------------------------------------------------------
+# 4. iOS & macOS Build & Temporary Files
+# ------------------------------------------------------------------------------
+ios/build/
+ios/DerivedData/
+**/Pods/
+/vendor/bundle/
+.bundle/
+**/.xcode.env.local
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.xcuserstate
+*.app
+*.dSYM
+
+# ------------------------------------------------------------------------------
+# 5. OS Metadata & Temporary Files (Windows & macOS)
+# ------------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ------------------------------------------------------------------------------
+# 6. Metro & React Native Bundler Caches
+# ------------------------------------------------------------------------------
+.metro/
+.metro-health-check*
+*.jsbundle
+*.sourcemap
+*.map
+
+# ------------------------------------------------------------------------------
+# 7. IDEs, Code Editors & Tools
+# ------------------------------------------------------------------------------
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Android Studio / IntelliJ / WebStorm
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+
+# Watchman
+.watchmanconfig
+
+# Fastlane
+**/fastlane/report.xml
+**/fastlane/Preview.html
+**/fastlane/screenshots
+**/fastlane/test_output
+
+# ------------------------------------------------------------------------------
+# 8. Testing & Code Coverage
+# ------------------------------------------------------------------------------
+/coverage/
+.nyc_output/
+.clinic/
+
+# ------------------------------------------------------------------------------
+# 9. Compressed Archives & Temporary Files
+# ------------------------------------------------------------------------------
+*.tmp
+*.temp
+*.swp
+*~
+*.bak
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.resolved
+
+# ------------------------------------------------------------------------------
+# 10. Custom Project & Backend Exclusions
+# ------------------------------------------------------------------------------
+# Separate backend directory (if maintained in a separate repo)
+dshino_back_node/
+
+# ------------------------------------------------------------------------------
+# 11. Documentation & Markdown Files (Except README.md)
+# ------------------------------------------------------------------------------
+*.md
+!README.md
+**/*.md
+!**/README.md
+
+
+# Firebase config. Not a password, but it identifies the project and this repo
+# is public, so it is shared through the team rather than committed. Get it
+# from the Firebase console (Project settings > Your apps > google-services.json).
+android/app/google-services.json
+ios/GoogleService-Info.plist

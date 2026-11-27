@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">DShino Partner</string>
+    <string name="location_tracking_title">Sharing your location</string>
+    <string name="location_tracking_text">Your customer can see you on the way to this job.</string>
+    <string name="location_tracking_channel_name">Live location</string>
+    <string name="location_tracking_channel_description">Shown while you are travelling to a customer.</string>
+</resources>

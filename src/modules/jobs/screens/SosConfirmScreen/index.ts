@@ -1,0 +1,1 @@
+export {SosConfirmScreen} from './SosConfirmScreen';

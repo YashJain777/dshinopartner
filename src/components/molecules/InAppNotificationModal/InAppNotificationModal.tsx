@@ -74,10 +74,10 @@ export const InAppNotificationModal: React.FC = () => {
 
   // Routes the partner to the screen that can actually show this notification.
   const handlePrimaryAction = () => {
-    const { bookingId, type } = config || {};
+    const { bookingId, ticketId, subject, type } = config || {};
     handleDismiss();
     // Let the dismiss animation finish before the screen changes.
-    setTimeout(() => navigateForNotification({ type, bookingId }), 200);
+    setTimeout(() => navigateForNotification({ type, bookingId, ticketId, subject }), 200);
   };
 
   if (!visible || !config) return null;

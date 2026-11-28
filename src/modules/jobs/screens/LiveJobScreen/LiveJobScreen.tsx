@@ -40,8 +40,8 @@ import {useTheme} from '../../../../hooks/useTheme';
 import {useScreenInsets} from '../../../../hooks/useScreenInsets';
 import {useActiveJob} from '../../../../hooks/useActiveJob';
 import {useLocationTracking} from '../../../../hooks/useLocationTracking';
-import {showImagePickerOptions} from '../../../../utils/camera.utils';
-import {enqueuePhoto} from '../../../../services/upload/photoQueue';
+import {useFocusRefresh} from '../../../../hooks/useFocusRefresh';
+import {usePhotoUploadsSettled} from '../../../../hooks/usePhotoUploadsSettled';
 import {getCurrentLocation, distanceInMeters} from '../../../../utils/location';
 import {BookingStatus, BookingIssueTypeKey} from '../../../../constants/api.constants';
 import {Booking} from '../../../../types/api.types';
@@ -107,6 +107,20 @@ export const LiveJobScreen: React.FC<LiveJobScreenProps> = ({navigation, route})
 
   // Streams position while travelling — the customer's live map reads this.
   useLocationTracking(booking?.status);
+
+  // Photo capture is a screen of its own, so the partner comes back here by
+  // going back. Without this the job stayed as it was when they left and the
+  // photo gates looked unmet.
+  useFocusRefresh(refresh);
+
+  // And again once the uploads actually land: capture is offline-first, so the
+  // refresh above usually runs while the last photo is still in flight.
+  //
+  // Keyed on the same id the capture enqueued under. This read `booking?.id`
+  // while `enqueuePhoto` is called with `jobId`, which prefers `bookingId` —
+  // whenever the two differ the queue was watched under a key nothing was
+  // filed against, so the gates never reopened on their own.
+  usePhotoUploadsSettled(booking?.bookingId || booking?.id, refresh);
 
   const [issueModalVisible, setIssueModalVisible] = useState(false);
   const [submittingIssue, setSubmittingIssue] = useState(false);
@@ -224,25 +238,6 @@ export const LiveJobScreen: React.FC<LiveJobScreenProps> = ({navigation, route})
         booking?.effectiveLocation?.addressLine1 || booking?.Address?.addressLine1 || undefined,
     });
   }, [booking, navigation]);
-
-  // Both capture paths go through the upload queue, so a photo taken here
-  // survives a dead spot exactly as one taken on the evidence screen does.
-  const handlePhoto = useCallback(
-    async (type: 'BEFORE' | 'AFTER') => {
-      if (!jobId) {
-        return;
-      }
-      try {
-        const uri = await showImagePickerOptions('evidence');
-        if (uri) {
-          await enqueuePhoto(jobId, uri, type);
-        }
-      } catch (err: any) {
-        Alert.alert('Could not add that photo', err?.message || 'Please try again.');
-      }
-    },
-    [jobId],
-  );
 
   const handleCall = useCallback(() => {
     const phone = booking?.Customer?.phone || booking?.customer?.phone;
@@ -363,16 +358,25 @@ export const LiveJobScreen: React.FC<LiveJobScreenProps> = ({navigation, route})
     const arrivedDone = reached('ARRIVED');
     const servicing = reached('IN_PROGRESS');
 
-    const photoStrip = (type: 'BEFORE' | 'AFTER', urls: string[]) => {
+    /**
+     * The thumbnails under a photo gate.
+     *
+     * This used to be a Pressable of its own that opened the OS picker. It
+     * sits INSIDE the gate row's Pressable, so a tap on a thumbnail hit the
+     * strip and never reached the row — one row, two destinations. The
+     * before-gate carried a "Tap to shoot…" hint that pointed people at the
+     * row; the after-gate did not, so there the strip won almost every time
+     * and the viewfinder was effectively unreachable.
+     *
+     * It is a plain View now. The row owns the tap, and both gates open the
+     * evidence screen.
+     */
+    const photoStrip = (urls: string[]) => {
       // Always REQUIRED_PHOTOS cells so the partner can see how many are left,
       // with the real thumbnail in the ones already taken.
       const cells = Math.max(REQUIRED_PHOTOS, urls.length);
       return (
-        <Pressable
-          onPress={() => handlePhoto(type)}
-          accessibilityRole="button"
-          accessibilityLabel={`Add ${type.toLowerCase()} photo, ${urls.length} of ${REQUIRED_PHOTOS} taken`}
-          style={styles.photoRow}>
+        <View style={styles.photoRow}>
           {Array.from({length: cells}).map((_, i) => {
             const uri = urls[i];
             if (uri) {
@@ -397,7 +401,7 @@ export const LiveJobScreen: React.FC<LiveJobScreenProps> = ({navigation, route})
               </View>
             );
           })}
-        </Pressable>
+        </View>
       );
     };
 
@@ -462,7 +466,7 @@ export const LiveJobScreen: React.FC<LiveJobScreenProps> = ({navigation, route})
                   : 'Tap to shoot the remaining panels'
               }
               onPress={() => navigation.navigate('PhotoEvidence', {type: 'BEFORE', bookingId: jobId})}>
-              {photoStrip('BEFORE', beforePhotos)}
+              {photoStrip(beforePhotos)}
             </GateChecklistItem>
           ) : undefined,
       },
@@ -476,8 +480,13 @@ export const LiveJobScreen: React.FC<LiveJobScreenProps> = ({navigation, route})
               label="After photos"
               state={afterCount >= REQUIRED_PHOTOS ? 'met' : 'pending'}
               value={`${afterCount} / ${REQUIRED_PHOTOS}`}
+              hint={
+                afterCount >= REQUIRED_PHOTOS
+                  ? undefined
+                  : 'Tap to shoot the remaining panels'
+              }
               onPress={() => navigation.navigate('PhotoEvidence', {type: 'AFTER', bookingId: jobId})}>
-              {photoStrip('AFTER', afterPhotos)}
+              {photoStrip(afterPhotos)}
             </GateChecklistItem>
             <Text style={[styles.hint, {color: t.textSecondary}]}>
               Then ask the customer for the 4-digit code in their app. You cannot
@@ -501,7 +510,6 @@ export const LiveJobScreen: React.FC<LiveJobScreenProps> = ({navigation, route})
     geofenceDistance,
     liveDistance,
     radius,
-    handlePhoto,
     reached,
     t,
   ]);

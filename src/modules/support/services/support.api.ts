@@ -23,14 +23,27 @@ export interface ReplyTicketPayload {
 }
 
 /**
- * Fetch all tickets for the active partner
+ * Fetch all tickets for the active partner.
+ *
+ * The list endpoint does not nest its page under `data` the way the others
+ * do — the controller spreads it, so the body is
+ * `{success, data: [...], pagination: {...}}`, not `{success, data: {data, pagination}}`.
+ *
+ * This used to `return response.data.data`, which is the ARRAY, while the
+ * signature promised a paginated object. The hook then read `.data` off that
+ * array, got `undefined`, and the ticket list was empty no matter how many
+ * tickets the server returned. Reassembling the page here keeps the shape the
+ * callers expect.
  */
 export const getTickets = async (params: { page?: number; limit?: number } = {}): Promise<PaginatedResponse<SupportTicket>> => {
-  const response = await apiClient.get<ApiResponse<PaginatedResponse<SupportTicket>>>(
-    API_ENDPOINTS.GET_TICKETS,
-    {params}
-  );
-  return response.data.data;
+  const response = await apiClient.get<
+    ApiResponse<SupportTicket[]> & {pagination?: PaginatedResponse<SupportTicket>['pagination']}
+  >(API_ENDPOINTS.GET_TICKETS, {params});
+
+  return {
+    data: Array.isArray(response.data?.data) ? response.data.data : [],
+    pagination: response.data?.pagination,
+  };
 };
 
 /**

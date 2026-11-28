@@ -14,12 +14,11 @@ import {
   TextInput,
   Alert,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import {Text} from '../../../../components/atoms/Text';
 import {Icon} from '../../../../components/atoms/Icon';
 import {ScreenContainer} from '../../../../components/layout/ScreenContainer';
+import {KeyboardAvoider} from '../../../../components/layout/KeyboardAvoider';
 import {ScreenHeader} from '../../../../components/molecules/ScreenHeader';
 import {useTheme} from '../../../../hooks/useTheme';
 import {useScreenInsets} from '../../../../hooks/useScreenInsets';
@@ -92,9 +91,7 @@ export const CreateTicketScreen: React.FC<CreateTicketScreenProps> = ({navigatio
         onBack={() => navigation.goBack()}
       />
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoider>
         <ScrollView
           contentContainerStyle={[
             styles.content,
@@ -256,35 +253,37 @@ export const CreateTicketScreen: React.FC<CreateTicketScreenProps> = ({navigatio
             </View>
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
 
-      <View
-        style={[
-          styles.actionBar,
-          {
-            backgroundColor: t.surface,
-            borderTopColor: t.outline,
-            paddingBottom: screenInsets.stickyBarPadding,
-          },
-        ]}>
-        <Pressable
-          onPress={handleSubmit}
-          disabled={!isFormValid || submitting}
-          accessibilityRole="button"
-          accessibilityState={{disabled: !isFormValid || submitting}}
+        {/* Inside the avoider: a Submit button under the keyboard is a
+            dead end when the description field is the one being typed in. */}
+        <View
           style={[
-            styles.primaryBtn,
-            {backgroundColor: isFormValid ? t.brandAction : t.neutralContainer},
+            styles.actionBar,
+            {
+              backgroundColor: t.surface,
+              borderTopColor: t.outline,
+              paddingBottom: screenInsets.stickyBarPadding,
+            },
           ]}>
-          <Text
+          <Pressable
+            onPress={handleSubmit}
+            disabled={!isFormValid || submitting}
+            accessibilityRole="button"
+            accessibilityState={{disabled: !isFormValid || submitting}}
             style={[
-              styles.primaryBtnText,
-              {color: isFormValid ? t.brandActionText : t.textDisabled},
+              styles.primaryBtn,
+              {backgroundColor: isFormValid ? t.brandAction : t.neutralContainer},
             ]}>
-            {submitting ? 'Sending…' : 'Submit ticket'}
-          </Text>
-        </Pressable>
-      </View>
+            <Text
+              style={[
+                styles.primaryBtnText,
+                {color: isFormValid ? t.brandActionText : t.textDisabled},
+              ]}>
+              {submitting ? 'Sending…' : 'Submit ticket'}
+            </Text>
+          </Pressable>
+        </View>
+      </KeyboardAvoider>
     </ScreenContainer>
   );
 };

@@ -3,7 +3,7 @@
  * Main navigation stack for the app
  */
 
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {MainTabNavigator} from './MainTabNavigator';
 import {LiveJobScreen} from '../modules/jobs/screens/LiveJobScreen';
@@ -34,33 +34,48 @@ export const RootNavigator = () => {
   const [kycLoading, setKycLoading] = useState(true);
   const [needsKyc, setNeedsKyc] = useState(false);
 
-  const checkKyc = async () => {
+  /**
+   * Decides between the KYC checklist and the app proper.
+   *
+   * The failure path used to swallow the error and fall through to the tabs.
+   * For the partner this matters most to — one who has just registered, and
+   * whose account the backend suspends until their documents are approved —
+   * that meant landing on a Home tab where every request 403s: an app that
+   * loads and then does nothing, with no explanation. The KYC screen is the
+   * safe default, because it is the one screen such a partner can actually
+   * use, and the only endpoints it needs are the ones that stay open to them.
+   */
+  const checkKyc = useCallback(async () => {
     try {
       const res = await getKycStatus();
-      // If the overall KYC status is NOT_STARTED (user hasn't uploaded documents)
-      // or if they don't have an Aadhaar number, we prompt for KYC onboarding.
-      if (res.overallKycStatus === 'NOT_STARTED' || !res.textDetails?.aadhaarNumber) {
-        setNeedsKyc(true);
-      } else {
-        setNeedsKyc(false);
-      }
+      const approved = ['APPROVED', 'VERIFIED'].includes(
+        String(res.overallKycStatus || '').toUpperCase(),
+      );
+      // Not started, no Aadhaar on file, or still under review — all of these
+      // mean the partner belongs on the checklist, not in the tabs.
+      setNeedsKyc(!approved || !res.textDetails?.aadhaarNumber);
     } catch (err) {
       console.warn('Failed to check KYC status in RootNavigator:', err);
+      setNeedsKyc(true);
     } finally {
       setKycLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     checkKyc();
-  }, []);
+  }, [checkKyc]);
 
   if (kycLoading) {
     return <LoadingScreen message="Verifying status..." />;
   }
 
   if (needsKyc) {
-    return <KycOnboardingScreen onComplete={() => setNeedsKyc(false)} />;
+    // Re-ask the server rather than assuming Done means approved. The
+    // backend keeps a partner suspended until an admin signs off their
+    // documents, so flipping this locally dropped them into tabs where every
+    // request 403s — the Done button appeared to do nothing at all.
+    return <KycOnboardingScreen onComplete={checkKyc} />;
   }
 
   return (

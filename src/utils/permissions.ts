@@ -57,6 +57,60 @@ export const requestLocationPermission = async (): Promise<LocationPermissionRes
   return 'granted';
 };
 
+export type CameraPermissionResult = 'granted' | 'denied' | 'never_ask_again';
+
+/**
+ * Camera permission.
+ *
+ * This became mandatory the moment the in-app viewfinder was added. Before
+ * that the app only ever launched the OS camera through an intent, which
+ * needs no permission at all — and react-native-image-picker says so in its
+ * own error:
+ *
+ *   "This library does not require Manifest.permission.CAMERA, if you add
+ *    this permission in manifest then you have to obtain the same."
+ *
+ * Android's rule (issuetracker 37063818): if an app DECLARES CAMERA but has
+ * not been granted it, ACTION_IMAGE_CAPTURE throws a SecurityException. So
+ * declaring the permission for vision-camera silently broke the picker too.
+ * Both paths now go through this.
+ */
+export const checkCameraPermission = async (): Promise<boolean> => {
+  if (Platform.OS !== 'android') {
+    return true;
+  }
+  return PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.CAMERA);
+};
+
+export const requestCameraPermission = async (): Promise<CameraPermissionResult> => {
+  if (Platform.OS !== 'android') {
+    return 'granted';
+  }
+
+  if (await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.CAMERA)) {
+    return 'granted';
+  }
+
+  const result = await PermissionsAndroid.request(
+    PermissionsAndroid.PERMISSIONS.CAMERA,
+    {
+      title: 'Camera access',
+      message:
+        'Dshino needs the camera to photograph the vehicle before and after the service. These photos are your proof the job was done.',
+      buttonPositive: 'Allow',
+      buttonNegative: 'Not now',
+    },
+  );
+
+  if (result === PermissionsAndroid.RESULTS.GRANTED) {
+    return 'granted';
+  }
+  if (result === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+    return 'never_ask_again';
+  }
+  return 'denied';
+};
+
 /**
  * Prompt user to open system settings if permission was blocked
  */

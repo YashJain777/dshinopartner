@@ -31,6 +31,7 @@ import {RaiseIssueModal} from '../../../../components/molecules/RaiseIssueModal'
 import {useTheme} from '../../../../hooks/useTheme';
 import {useScreenInsets} from '../../../../hooks/useScreenInsets';
 import {useActiveJob} from '../../../../hooks/useActiveJob';
+import {usePhotoUploadsSettled} from '../../../../hooks/usePhotoUploadsSettled';
 import {BookingIssueTypeKey} from '../../../../constants/api.constants';
 import {Booking} from '../../../../types/api.types';
 import {radii} from '../../../../theme/tokens';
@@ -122,6 +123,10 @@ export const CompleteJobScreen: React.FC<CompleteJobScreenProps> = ({
   const [lockedOut, setLockedOut] = useState(false);
   const [issueModalVisible, setIssueModalVisible] = useState(false);
   const [submittingIssue, setSubmittingIssue] = useState(false);
+
+  // The after-photos are usually still uploading when the partner comes back
+  // from the evidence screen; refetch the moment they land.
+  usePhotoUploadsSettled(booking?.bookingId || booking?.id, refresh);
 
   const afterCount = afterPhotoCount(booking);
   const photosMissing = Math.max(0, REQUIRED_PHOTOS - afterCount);

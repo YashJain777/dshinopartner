@@ -14,8 +14,6 @@ import {
   ScrollView,
   Pressable,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   StyleProp,
   ViewStyle,
 } from 'react-native';
@@ -23,6 +21,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {Text} from '../../atoms/Text';
 import {Icon} from '../../atoms/Icon';
 import {tokens} from '../../../theme/tokens';
+import {KeyboardAvoider} from '../../layout/KeyboardAvoider';
 
 const LOGO = require('../../../assets/images/DShino_logo.png');
 
@@ -57,9 +56,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
     <SafeAreaView
       style={[styles.safe, {backgroundColor: t.surface}]}
       edges={['top', 'bottom']}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoider>
         <ScrollView
           contentContainerStyle={[styles.content, contentStyle]}
           keyboardShouldPersistTaps="handled"
@@ -115,7 +112,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
         {footer ? (
           <View style={[styles.footer, {borderTopColor: t.outline}]}>{footer}</View>
         ) : null}
-      </KeyboardAvoidingView>
+      </KeyboardAvoider>
     </SafeAreaView>
   );
 };

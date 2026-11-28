@@ -7,11 +7,19 @@ export interface InAppNotificationConfig {
   title: string;
   body: string;
   bookingId?: string;
+  /** Support notifications carry the thread to open. */
+  ticketId?: string;
+  subject?: string;
   type?: string;
 }
 
 /** Where the notification's primary button takes the partner. */
-export type InAppAction = 'ACTIVE_JOB' | 'BOOKING_DETAILS' | 'EARNINGS' | 'NONE';
+export type InAppAction =
+  | 'ACTIVE_JOB'
+  | 'BOOKING_DETAILS'
+  | 'EARNINGS'
+  | 'SUPPORT_TICKET'
+  | 'NONE';
 
 export interface NotificationPresentation {
   emoji: string;
@@ -129,6 +137,17 @@ const PRESENTATION: Record<string, NotificationPresentation> = {
     actionLabel: 'View Earnings',
     fallbackTitle: 'Wallet Updated',
     fallbackBody: 'Your wallet balance has changed.',
+  },
+
+  SUPPORT_TICKET: {
+    emoji: '💬',
+    icon: 'lifebuoy',
+    tag: 'SUPPORT',
+    accent: '#15379B',
+    action: 'SUPPORT_TICKET',
+    actionLabel: 'Open the ticket',
+    fallbackTitle: 'Support update',
+    fallbackBody: 'There is an update on one of your support tickets.',
   },
 
   SOS_ALERT: {

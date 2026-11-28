@@ -157,6 +157,8 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
       const navigated = navigateForNotification({
         type: item.data?.type || item.type,
         bookingId: item.data?.bookingId,
+        ticketId: item.data?.ticketId,
+        subject: item.data?.subject,
       });
       if (!navigated) {
         setSelected(item);

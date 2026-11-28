@@ -14,8 +14,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
   StyleProp,
   ViewStyle,
@@ -25,6 +23,7 @@ import {Icon, IconName} from '../../atoms/Icon';
 import {useTheme} from '../../../hooks/useTheme';
 import {useScreenInsets} from '../../../hooks/useScreenInsets';
 import {radii} from '../../../theme/tokens';
+import {KeyboardAvoider} from '../../layout/KeyboardAvoider';
 
 export interface ModalSheetAction {
   label: string;
@@ -99,9 +98,7 @@ export const ModalSheet: React.FC<ModalSheetProps> = ({
       animationType="slide"
       onRequestClose={onClose}
       statusBarTranslucent>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoider>
         <Pressable
           style={[styles.scrim, {backgroundColor: t.scrim}]}
           onPress={onClose}
@@ -216,7 +213,7 @@ export const ModalSheet: React.FC<ModalSheetProps> = ({
             </View>
           ) : null}
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAvoider>
     </Modal>
   );
 };

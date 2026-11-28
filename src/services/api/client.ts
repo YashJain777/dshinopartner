@@ -161,9 +161,35 @@ apiClient.interceptors.response.use(
         url.includes('/logout');
 
       const { isAuthenticated } = useAuthStore.getState();
+      const body = (error.response.data as any) || {};
+
+      // The server now says which kind of 403 this is, so stop guessing from
+      // the message text.
+      //
+      // KYC_PENDING is the state EVERY partner is in between registering and
+      // an admin approving their documents — the backend suspends the account
+      // until then. It is not a rejection, and signing them out of the flow
+      // they are halfway through is the worst possible response. The KYC and
+      // profile endpoints stay open for exactly this reason; everything else
+      // answers KYC_PENDING and the app leaves the session alone.
+      if (body.code === 'KYC_PENDING') {
+        return Promise.reject(error);
+      }
+
+      // An explicit forceLogout is the server ending the session: a real
+      // suspension, a termination. Honour it rather than waiting for the
+      // message to happen to match one of the strings below.
+      if (body.forceLogout === true && isAuthenticated) {
+        await useAuthStore.getState().logout();
+        Alert.alert(
+          'Signed out',
+          body.message || 'Your account is no longer active. Please contact support.',
+        );
+        return Promise.reject(error);
+      }
 
       if (!isAuthOrCleanupEndpoint && isAuthenticated) {
-        const message = (error.response.data as any)?.message || '';
+        const message = body.message || '';
         if (
           message.includes('Required role') ||
           message.includes('Access denied') ||

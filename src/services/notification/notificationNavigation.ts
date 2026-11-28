@@ -13,6 +13,9 @@ import {getNotificationPresentation} from './inAppNotificationManager';
 export interface NotificationTarget {
   type?: string;
   bookingId?: string;
+  /** Support notifications carry the thread to open. */
+  ticketId?: string;
+  subject?: string;
 }
 
 /**
@@ -36,7 +39,12 @@ export const isNotificationActionable = ({type, bookingId}: NotificationTarget):
  * @returns true when navigation happened, false when there is no destination
  *   and the caller should show the notification body instead.
  */
-export const navigateForNotification = ({type, bookingId}: NotificationTarget): boolean => {
+export const navigateForNotification = ({
+  type,
+  bookingId,
+  ticketId,
+  subject,
+}: NotificationTarget): boolean => {
   const {action} = getNotificationPresentation(type);
 
   switch (action) {
@@ -56,6 +64,15 @@ export const navigateForNotification = ({type, bookingId}: NotificationTarget): 
 
     case 'EARNINGS':
       navigate('MainTabs' as any, {screen: 'Earnings'} as any);
+      return true;
+
+    case 'SUPPORT_TICKET':
+      // Without an id there is no thread to open, so fall back to the list.
+      if (ticketId) {
+        navigate('TicketDetails' as any, {ticketId, subject: subject || 'Support ticket'} as any);
+      } else {
+        navigate('SupportTickets' as any);
+      }
       return true;
 
     case 'NONE':

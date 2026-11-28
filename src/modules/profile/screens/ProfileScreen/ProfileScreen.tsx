@@ -22,7 +22,6 @@ import {
 import {Text} from '../../../../components/atoms/Text';
 import {Icon, IconName} from '../../../../components/atoms/Icon';
 import {LoadingScreen} from '../../../../components/molecules/LoadingScreen';
-import {ErrorScreen} from '../../../../components/molecules/ErrorScreen';
 import {ScreenContainer} from '../../../../components/layout/ScreenContainer';
 import {FallbackImage} from '../../../../components/common/FallbackImage';
 import {ProfileScreenProps} from './ProfileScreen.types';
@@ -319,8 +318,53 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
     return <LoadingScreen message="Loading your profile..." />;
   }
 
+  // A failed profile load must never take the Logout button with it.
+  //
+  // This returned a bare ErrorScreen, and Logout lives further down THIS
+  // screen — so whenever the profile call failed, the only way out of the
+  // app disappeared behind a "Try again" that kept failing. That is exactly
+  // what a partner hit after registering: their account is suspended pending
+  // KYC, the profile endpoint 403'd, and they were stuck signed in with no
+  // way to sign out.
   if (error && !profile) {
-    return <ErrorScreen message={error} onRetry={refresh} />;
+    return (
+      <ScreenContainer backgroundColor={t.surfaceContainer}>
+        <View style={styles.errorWrap}>
+          <View style={[styles.errorIcon, {backgroundColor: t.dangerContainer}]}>
+            <Icon name="alert" size={26} color={t.dangerInk} strokeWidth={1.9} />
+          </View>
+          <Text style={[styles.errorTitle, {color: t.textHeading}]}>
+            Could not load your profile
+          </Text>
+          <Text style={[styles.errorBody, {color: t.textSecondary}]}>{error}</Text>
+
+          <Pressable
+            onPress={refresh}
+            accessibilityRole="button"
+            style={[styles.errorPrimary, {backgroundColor: t.brandAction}]}>
+            <Text style={[styles.errorPrimaryText, {color: t.brandActionText}]}>
+              Try again
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setLogoutModalVisible(true)}
+            accessibilityRole="button"
+            style={[styles.errorSecondary, {borderColor: t.dangerBorder}]}>
+            <Icon name="send" size={16} color={t.dangerInk} strokeWidth={2} />
+            <Text style={[styles.errorSecondaryText, {color: t.dangerInk}]}>
+              Log out
+            </Text>
+          </Pressable>
+        </View>
+
+        <LogoutConfirmationModal
+          visible={logoutModalVisible}
+          onClose={() => setLogoutModalVisible(false)}
+          onConfirm={handleConfirmLogout}
+        />
+      </ScreenContainer>
+    );
   }
 
   const name = profile?.User?.name || profile?.name || 'Partner';
@@ -626,6 +670,58 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
 };
 
 const styles = StyleSheet.create({
+  errorWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingHorizontal: 32,
+  },
+  errorIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  errorBody: {
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
+  },
+  errorPrimary: {
+    height: 48,
+    minWidth: 180,
+    paddingHorizontal: 22,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  errorPrimaryText: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  errorSecondary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 46,
+    minWidth: 180,
+    paddingHorizontal: 22,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  errorSecondaryText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
   identity: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -4,6 +4,7 @@
  */
 
 import {Alert} from 'react-native';
+import {requestCameraPermission, promptOpenAppSettings} from './permissions';
 import {
   launchCamera,
   launchImageLibrary,
@@ -57,6 +58,20 @@ export const openCamera = async (
   preset: CapturePreset = 'evidence',
 ): Promise<string | null> => {
   try {
+    // The manifest declares CAMERA for the in-app viewfinder. Android then
+    // refuses ACTION_IMAGE_CAPTURE unless the permission is actually granted,
+    // and react-native-image-picker fails with "This library does not require
+    // Manifest.permission.CAMERA…". Asking here keeps both paths working.
+    const permission = await requestCameraPermission();
+    if (permission !== 'granted') {
+      if (permission === 'never_ask_again') {
+        promptOpenAppSettings(
+          'Camera access is blocked. Dshino needs it to photograph the vehicle — enable it in App Settings.',
+        );
+      }
+      return null;
+    }
+
     const response: ImagePickerResponse = await launchCamera(optionsFor(preset));
 
     if (response.didCancel) {

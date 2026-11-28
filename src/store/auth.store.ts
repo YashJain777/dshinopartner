@@ -158,12 +158,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           error: null,
         });
 
-        // Register FCM token in background
-        try {
-          await registerDeviceForPush();
-        } catch (fcmError) {
-          console.error('[Auth Store] Background FCM registration failed:', fcmError);
-        }
+        // Genuinely in the background now.
+        //
+        // This said "in background" but awaited, so signing in or registering
+        // sat here until Firebase produced a token and the server accepted
+        // it. getFcmToken can take many seconds on a device without Play
+        // Services, and for a partner who has just registered the register
+        // call itself returns 403 — their account is suspended pending KYC.
+        // Push registration is a nice-to-have; it must never hold up the
+        // screen that is waiting on this result.
+        registerDeviceForPush().catch(fcmError =>
+          logger.warn('[Auth Store] Background FCM registration failed', fcmError),
+        );
 
         return {success: true};
       } else {
@@ -208,12 +214,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           error: null,
         });
 
-        // Register FCM token in background
-        try {
-          await registerDeviceForPush();
-        } catch (fcmError) {
-          console.error('[Auth Store] Background FCM registration failed:', fcmError);
-        }
+        // Genuinely in the background now.
+        //
+        // This said "in background" but awaited, so signing in or registering
+        // sat here until Firebase produced a token and the server accepted
+        // it. getFcmToken can take many seconds on a device without Play
+        // Services, and for a partner who has just registered the register
+        // call itself returns 403 — their account is suspended pending KYC.
+        // Push registration is a nice-to-have; it must never hold up the
+        // screen that is waiting on this result.
+        registerDeviceForPush().catch(fcmError =>
+          logger.warn('[Auth Store] Background FCM registration failed', fcmError),
+        );
 
         return {success: true};
       } else {
@@ -387,12 +399,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isAuthenticated: true,
         });
 
-        // Register FCM token on app launch in background
-        try {
-          await registerDeviceForPush();
-        } catch (fcmError) {
-          console.error('[Auth Store] App launch FCM registration failed:', fcmError);
-        }
+        // Background, so a slow Firebase handshake does not delay the app
+        // deciding whether the stored session is usable.
+        registerDeviceForPush().catch(fcmError =>
+          logger.warn('[Auth Store] App launch FCM registration failed', fcmError),
+        );
       }
     } catch (error) {
       console.error('Load stored auth error:', error);

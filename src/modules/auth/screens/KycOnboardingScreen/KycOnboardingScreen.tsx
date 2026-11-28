@@ -193,6 +193,18 @@ export const KycOnboardingScreen: React.FC<KycOnboardingScreenProps> = ({
 
   const approved = checklist.filter(d => d.status === 'APPROVED').length;
   const allUploaded = checklist.every(d => d.status !== 'NOT_SUBMITTED');
+  /**
+   * Uploading is not the same as being let in.
+   *
+   * The account stays suspended until an admin approves every document, so a
+   * partner who has uploaded all four still cannot use the app. The button
+   * said "Done" at that point and dropped them into tabs where every request
+   * failed, which read as the button doing nothing. It now only claims Done
+   * once the server agrees.
+   */
+  const allApproved =
+    checklist.length > 0 && checklist.every(d => d.status === 'APPROVED');
+  const awaitingReview = allUploaded && !allApproved;
 
   return (
     <AuthLayout
@@ -230,19 +242,30 @@ export const KycOnboardingScreen: React.FC<KycOnboardingScreenProps> = ({
           </Pressable>
         ) : (
           <>
+            {awaitingReview ? (
+              <View
+                style={[styles.reviewNote, {backgroundColor: t.warningContainer}]}>
+                <Icon name="clock" size={16} color={t.warningInk} strokeWidth={2} />
+                <Text style={[styles.reviewNoteText, {color: t.warningInk}]}>
+                  All documents are in. Your agency reviews them before you can
+                  take jobs — usually within a day. You will get a notification.
+                </Text>
+              </View>
+            ) : null}
+
             <Pressable
               onPress={leave}
               accessibilityRole="button"
               style={[
                 styles.primaryBtn,
-                {backgroundColor: allUploaded ? t.brandAction : t.surfaceElevated},
+                {backgroundColor: allApproved ? t.brandAction : t.surfaceElevated},
               ]}>
               <Text
                 style={[
                   styles.primaryText,
-                  {color: allUploaded ? t.brandActionText : t.textPrimary},
+                  {color: allApproved ? t.brandActionText : t.textPrimary},
                 ]}>
-                {allUploaded ? 'Done' : 'Finish later'}
+                {allApproved ? 'Done' : awaitingReview ? 'Check status' : 'Finish later'}
               </Text>
             </Pressable>
             <Text style={[styles.footerNote, {color: t.textTertiary}]}>
@@ -438,6 +461,18 @@ export const KycOnboardingScreen: React.FC<KycOnboardingScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
+  reviewNote: {
+    flexDirection: 'row',
+    gap: 10,
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  reviewNoteText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 17,
+  },
   sectionRule: {
     height: 1,
     marginVertical: 2,

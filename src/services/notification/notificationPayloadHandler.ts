@@ -38,6 +38,9 @@ export const handleNotificationPayload = (
   const {notification, data} = remoteMessage;
   const bookingId = data?.bookingId;
   const notificationType = data?.type;
+  // Support notifications carry the thread instead of a booking.
+  const ticketId = data?.ticketId;
+  const subject = data?.subject;
 
   logger.log('[NotificationHandler] type:', notificationType, 'foreground:', isForeground);
 
@@ -52,6 +55,8 @@ export const handleNotificationPayload = (
       title: notification?.title || presentation.fallbackTitle,
       body: notification?.body || presentation.fallbackBody,
       bookingId,
+      ticketId,
+      subject,
       type: notificationType,
     });
     return;
@@ -59,7 +64,7 @@ export const handleNotificationPayload = (
 
   // Background or cold-start tap: go straight to the screen that can show it,
   // or to the notification list when there is no specific destination.
-  if (!navigateForNotification({type: notificationType, bookingId})) {
+  if (!navigateForNotification({type: notificationType, bookingId, ticketId, subject})) {
     navigate('Notifications' as any);
   }
 };

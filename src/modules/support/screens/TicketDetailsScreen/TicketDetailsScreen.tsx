@@ -15,12 +15,11 @@ import {
   RefreshControl,
   Alert,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import {Text} from '../../../../components/atoms/Text';
 import {Icon} from '../../../../components/atoms/Icon';
 import {ScreenContainer} from '../../../../components/layout/ScreenContainer';
+import {KeyboardAvoider} from '../../../../components/layout/KeyboardAvoider';
 import {ScreenHeader} from '../../../../components/molecules/ScreenHeader';
 import {LoadingScreen} from '../../../../components/molecules/LoadingScreen';
 import {useTheme} from '../../../../hooks/useTheme';
@@ -165,9 +164,7 @@ export const TicketDetailsScreen: React.FC<TicketDetailsScreenProps> = ({
         </View>
       </ScreenHeader>
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoider>
         <FlatList
           ref={listRef}
           data={messages}
@@ -254,7 +251,7 @@ export const TicketDetailsScreen: React.FC<TicketDetailsScreenProps> = ({
             </>
           )}
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAvoider>
     </ScreenContainer>
   );
 };

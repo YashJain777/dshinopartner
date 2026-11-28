@@ -40,7 +40,7 @@ import {usePhotoQueue} from '../../../../hooks/usePhotoQueue';
 import {enqueuePhoto} from '../../../../services/upload/photoQueue';
 import {useScreenInsets} from '../../../../hooks/useScreenInsets';
 import {useActiveJob} from '../../../../hooks/useActiveJob';
-import {showImagePickerOptions} from '../../../../utils/camera.utils';
+import {openCamera, openGallery} from '../../../../utils/camera.utils';
 import {Booking} from '../../../../types/api.types';
 import {tokens, radii} from '../../../../theme/tokens';
 
@@ -137,23 +137,40 @@ export const PhotoEvidenceScreen: React.FC<PhotoEvidenceScreenProps> = ({
     [jobId, type],
   );
 
-  /** The OS picker — the gallery button, and the fallback when the camera is out. */
-  const pickFromDevice = useCallback(async () => {
-    if (picking || !jobId) {
-      return;
-    }
-    try {
-      setPicking(true);
-      const uri = await showImagePickerOptions('evidence');
-      if (uri) {
-        await accept(uri);
+  /**
+   * Runs one of the OS pickers and queues whatever comes back.
+   *
+   * Everything here used to call `showImagePickerOptions`, which puts up a
+   * "Take Photo / Choose from Gallery" dialog. On this screen that question
+   * is already answered: the shutter takes photos and the gallery button
+   * picks from the gallery. Asking again on every single shot — four per
+   * side, eight per job — was pure friction.
+   */
+  const pickWith = useCallback(
+    async (open: () => Promise<string | null>) => {
+      if (picking || !jobId) {
+        return;
       }
-    } catch (err: any) {
-      Alert.alert('Could not add that photo', err?.message || 'Please try again.');
-    } finally {
-      setPicking(false);
-    }
-  }, [accept, jobId, picking]);
+      try {
+        setPicking(true);
+        const uri = await open();
+        if (uri) {
+          await accept(uri);
+        }
+      } catch (err: any) {
+        Alert.alert('Could not add that photo', err?.message || 'Please try again.');
+      } finally {
+        setPicking(false);
+      }
+    },
+    [accept, jobId, picking],
+  );
+
+  /** The gallery button says gallery, so it opens the gallery. */
+  const pickFromGallery = useCallback(() => pickWith(() => openGallery('evidence')), [pickWith]);
+
+  /** The fallback card when the viewfinder cannot run — straight to the camera. */
+  const shootWithOsCamera = useCallback(() => pickWith(() => openCamera('evidence')), [pickWith]);
 
   /**
    * The viewfinder is the intended path, but it must never be the only one:
@@ -215,14 +232,14 @@ export const PhotoEvidenceScreen: React.FC<PhotoEvidenceScreenProps> = ({
               nextSlot >= 0 ? ANGLES[nextSlot].hint : 'Shoot another if something is unclear'
             }
             onCapture={accept}
-            onPickFromGallery={pickFromDevice}
+            onPickFromGallery={pickFromGallery}
             onUnavailable={handleCameraUnavailable}
             isActive={isFocused}
             disabled={picking}
           />
         ) : (
           <Pressable
-            onPress={pickFromDevice}
+            onPress={shootWithOsCamera}
             accessibilityRole="button"
             style={[styles.cameraFallback, {backgroundColor: t.surfaceElevated}]}>
             <Icon name="camera" size={24} color={t.textTertiary} strokeWidth={1.8} />
@@ -257,18 +274,22 @@ export const PhotoEvidenceScreen: React.FC<PhotoEvidenceScreenProps> = ({
             const isNext = i === nextSlot;
 
             return (
-              <Pressable
+              // Not a button. The shutter above takes the photo and the
+              // gallery button picks one; a slot is where the result lands.
+              // Tapping one used to raise the "Take Photo / Choose from
+              // Gallery" dialog, so the partner answered the same question
+              // on every shot. Keeping the status readable to a screen
+              // reader is all a slot has to do.
+              <View
                 key={angle.key}
-                onPress={pickFromDevice}
-                disabled={picking}
-                accessibilityRole="button"
+                accessible
                 accessibilityLabel={
                   uri
                     ? `${angle.label}, uploaded`
                     : queued
                     ? `${angle.label}, waiting to upload`
                     : isNext
-                    ? `Take the ${angle.label} photo, next`
+                    ? `${angle.label}, next to shoot`
                     : `${angle.label}, not taken yet`
                 }
                 style={[
@@ -338,7 +359,7 @@ export const PhotoEvidenceScreen: React.FC<PhotoEvidenceScreenProps> = ({
                       : 'Waiting for signal'
                     : angle.hint}
                 </Text>
-              </Pressable>
+              </View>
             );
           })}
         </View>
